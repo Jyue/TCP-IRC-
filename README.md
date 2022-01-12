@@ -1,7 +1,10 @@
-# TCP-IRC-多人聊天室
+# TCP-IRC Chatroom
+## Description
+A prototype Chatroom for DDOS attack practice.
 
+## How to Build
 * Language: C
 * Platform: linux
 * Usage:
-	* Server端：./server 
-	* Client端：./client [hostname]
+	* Server：./server 
+	* Client：./client [hostname]
